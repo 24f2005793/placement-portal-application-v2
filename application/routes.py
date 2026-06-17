@@ -113,3 +113,10 @@ def register():
     
     return jsonify({"message": "Registration Successfull"}), 201
 
+
+#To catch all components in single page 
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_vue_app(path):
+    return render_template('index.html')
+
