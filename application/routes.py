@@ -114,9 +114,153 @@ def register():
     return jsonify({"message": "Registration Successfull"}), 201
 
 
+
 #To catch all components in single page 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_vue_app(path):
     return render_template('index.html')
+
+
+
+@app.route('/api/admin/dashboard', methods=['GET'])
+@auth_required('token')
+def get_admin_dashboard():
+    if not current_user.has_role('admin'):
+        return jsonify({"message": "Unauthorized"}), 403
+    return jsonify({
+        "total_students": Student.query.count(),
+        "total_companies": Company.query.count(),
+        "total_drives": PlacementDrive.query.count()
+    }), 200
+
+
+@app.route('/api/companies', methods=['GET'])
+@app.route('/api/companies/<int:id>', methods=['GET'])
+@auth_required('token')
+def get_companies(id=None):
+    # Get specific company
+    if id: 
+        company = Company.query.get(id)
+        if not company:
+            return jsonify({"message": "Company not found"}), 404
+        return jsonify({
+            "id": company.id,
+            "company_name": company.company_name,
+            "hr_contact": company.hr_contact,
+            "description": company.description,
+            "approval_status": company.approval_status
+        }), 200
+    
+    # Get searched company
+    search_query = request.args.get('search_word')
+    if search_query:
+        raw_search = make_raw(search_query)
+        companies = Company.query.filter(Company.search_company_name.like(f'%{raw_search}%')).all()
+    
+    # Get all companies
+    else:
+        companies = Company.query.all()
+
+    result = []
+    for c in companies:
+        user = User.query.get(c.user_id)
+        result.append({
+            "id": c.id,
+            "company_name": c.company_name,
+            "approval_status": c.approval_status,
+            "active": user.active if user else False,
+        })
+    return jsonify(result), 200
+
+
+@app.route('/api/companies/<int:id>', methods=['PUT'])
+@auth_required('token')
+def update_company(id):
+    company = Company.query.get(id)
+    if not company: return jsonify({"message": "Company not found"}), 404
+    data = request.get_json() or {}
+
+    #Admin update company details (active,approval_status)
+    if current_user.has_role('admin'):
+        if 'approval_status' in data: company.approval_status = data['approval_status']
+        if 'active' in data and data['active'] is not None:
+            user = User.query.get(company.user_id)
+            if user: user.active = data['active']
+        db.session.commit()
+        return jsonify({"message": "Company status updated by Admin"}), 200
+
+    #Company update their own profile
+    if current_user.has_role('company') and company.user_id == current_user.id:
+        if 'description' in data: company.description = data['description']
+        if 'hr_contact' in data: company.hr_contact = data['hr_contact']
+        db.session.commit()
+        return jsonify({"message": "Company profile updated successfully"}), 200
+
+    return jsonify({"message": "Unauthorized action"}), 403
+
+
+@app.route('/api/students', methods=['GET'])
+@app.route('/api/students/<int:id>', methods=['GET'])
+@auth_required('token')
+def get_students(id=None):
+    if id:
+        student = Student.query.get(id)
+        if not student: return jsonify({"message": "Student not found"}), 404
+        user = User.query.get(student.user_id)
+        return jsonify({
+            "id": student.id,
+            "first_name": student.first_name,
+            "last_name": student.last_name,
+            "branch": student.branch,
+            "cgpa": student.cgpa,
+            "resume_file": student.resume_file,
+            "email": user.email if user else "",
+            "active": user.active if user else False
+        }), 200
+
+    search_query = request.args.get('search_word')
+    if search_query:
+        raw_search = make_raw(search_query)
+        students = Student.query.filter(Student.search_student_name.like(f'%{raw_search}%')).all()
+    else:
+        students = Student.query.all()
+
+    result = []
+    for s in students:
+        user = User.query.get(s.user_id)
+        result.append({
+            "id": s.id,
+            "user_id": s.user_id,
+            "first_name": s.first_name,
+            "last_name": s.last_name,
+            "branch": s.branch,
+            "active": user.active if user else False
+        })
+    return jsonify(result), 200
+
+
+@app.route('/api/students/<int:id>', methods=['PUT'])
+@auth_required('token')
+def update_student(id):
+    student = Student.query.get(id)
+    if not student: return jsonify({"message": "Student not found"}), 404
+    data = request.get_json() or {}
+
+    if current_user.has_role('admin'):
+        if 'active' in data and data['active'] is not None:
+            user = User.query.get(student.user_id)
+            if user: user.active = data['active']
+            db.session.commit()
+            return jsonify({"message": "Student status updated by Admin"}), 200
+
+    if current_user.has_role('student') and student.user_id == current_user.id:
+        if 'first_name' in data: student.first_name = data['first_name']
+        if 'last_name' in data: student.last_name = data['last_name']
+        if 'branch' in data: student.branch = data['branch']
+        if 'cgpa' in data: student.cgpa = data['cgpa']
+        db.session.commit()
+        return jsonify({"message": "Student profile updated successfully"}), 200
+
+    return jsonify({"message": "Unauthorized action"}), 403
 
