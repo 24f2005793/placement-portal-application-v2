@@ -264,3 +264,214 @@ def update_student(id):
 
     return jsonify({"message": "Unauthorized action"}), 403
 
+
+
+@app.route('/api/drives', methods=['GET'])
+@app.route('/api/drives/<int:id>', methods=['GET'])
+@auth_required('token')
+def get_drives(id=None):
+    if id:
+        drive = PlacementDrive.query.get(id)
+        if not drive: return jsonify({"message": "Drive not found"}), 404
+        comp = Company.query.get(drive.company_id)
+        return jsonify({
+            "id": drive.id,
+            "company_name": comp.company_name ,
+            "job_title": drive.job_title,
+            "job_description": drive.job_description,
+            "job_salary": drive.job_salary,
+            "job_location": drive.job_location,
+            "eligibility_criteria": drive.eligibility_criteria,
+            "application_deadline": str(drive.application_deadline),
+            "status": drive.status
+        }), 200
+
+    search_query = request.args.get('search_word')
+    company = None
+    if current_user.has_role('company'):
+        company = Company.query.filter_by(user_id=current_user.id).first()
+
+    if search_query:
+        raw_search = make_raw(search_query)
+        #Show only those drives which the company has created
+        if company:
+            drives = PlacementDrive.query.filter(
+                PlacementDrive.company_id == company.id,
+                PlacementDrive.search_job_title.like(f'%{raw_search}%')
+            ).all()
+        else:
+            drives = PlacementDrive.query.filter(
+                PlacementDrive.search_job_title.like(f'%{raw_search}%')
+            ).all()
+    else:
+        if company:
+            drives = PlacementDrive.query.filter_by(company_id=company.id).all()
+        else:
+            drives = PlacementDrive.query.all()
+
+    result = []
+    for d in drives:
+        comp = Company.query.get(d.company_id)
+        result.append({
+            "id": d.id,
+            "company_id": d.company_id,
+            "job_title": d.job_title,
+            "job_location": d.job_location,
+            "status": d.status,
+            "application_deadline": str(d.application_deadline),
+            "company_name": comp.company_name,
+            "eligibility_criteria": d.eligibility_criteria
+        })
+    return jsonify(result), 200
+
+
+
+@app.route('/api/drives', methods=['POST'])
+@auth_required('token')
+def create_drive():
+    #Only approved companies can create drive
+    if not current_user.has_role('company'): return jsonify({"message": "Only companies can create drives"}), 403
+
+    company = Company.query.filter_by(user_id=current_user.id).first()
+    if company.approval_status != 'Approved': return jsonify({"message": "Company not approved"}), 403
+
+    data = request.get_json() or {}
+    
+    if not data.get('job_title'): return jsonify({"message": "Job title is required"}), 400
+    if not data.get('job_description'): return jsonify({"message": "Job description is required"}), 400
+    if not data.get('application_deadline'): return jsonify({"message": "Deadline is required (YYYY-MM-DD)"}), 400
+
+    deadline = datetime.strptime(data['application_deadline'], '%Y-%m-%d').date()
+
+    new_drive = PlacementDrive(
+        company_id=company.id,
+        job_title=data['job_title'],
+        job_description=data['job_description'],
+        job_salary=data.get('job_salary'),
+        job_location=data.get('job_location'),
+        eligibility_criteria=data.get('eligibility_criteria'),
+        application_deadline=deadline,
+        status='Pending',
+        search_job_title=make_raw(data['job_title'])
+    )
+
+    db.session.add(new_drive)
+    db.session.commit()
+    return jsonify({"message": "Drive created successfully"}), 201
+
+
+
+@app.route('/api/drives/<int:id>', methods=['PUT'])
+@auth_required('token')
+def update_drive(id):
+    drive = PlacementDrive.query.get(id)
+    if not drive: return jsonify({"message": "Drive not found"}), 404
+    data = request.get_json() or {}
+
+    if current_user.has_role('admin') and 'status' in data:
+        drive.status = data['status']
+        db.session.commit()
+        return jsonify({"message": "Drive status updated by Admin"}), 200
+        
+    if current_user.has_role('company'):
+        comp = Company.query.filter_by(user_id=current_user.id).first()
+        if comp and drive.company_id == comp.id:
+            if 'job_title' in data: 
+                drive.job_title = data['job_title'] 
+                drive.search_job_title = make_raw(data['job_title'])
+            if 'status' in data: drive.status = data['status']
+            if 'job_description' in data: drive.job_description = data['job_description']
+            if 'job_salary' in data: drive.job_salary = data['job_salary']
+            if 'job_location' in data: drive.job_location = data['job_location']
+            if 'application_deadline' in data: 
+                drive.application_deadline = datetime.strptime(data['application_deadline'], '%Y-%m-%d').date()
+            db.session.commit()
+            return jsonify({"message": "Drive details updated"}), 200
+
+    return jsonify({"message": "Unauthorized action"}), 403
+
+
+
+@app.route('/api/drives/<int:id>', methods=['DELETE'])
+@auth_required('token')
+def delete_drive(id):
+    drive = PlacementDrive.query.get(id)
+    if not drive: return jsonify({"message": "Drive not found"}), 404
+
+    comp = Company.query.filter_by(user_id=current_user.id).first()
+    if not comp or drive.company_id != comp.id: return jsonify({"message": "Unauthorized"}), 403
+    #Only delete pending drives
+    if drive.status not in ['Pending']: return jsonify({"message": "Cannot delete completed drive"}), 400
+
+    db.session.delete(drive)
+    db.session.commit()
+    return jsonify({"message": "Drive deleted successfully"}), 200
+
+
+
+@app.route('/api/applications', methods=['GET'])
+@app.route('/api/applications/<int:id>', methods=['GET'])
+@auth_required('token')
+def get_applications(id=None):
+    if id:
+        apps=Application.query.filter_by(id=id).all()
+    else:
+        apps = Application.query.all()
+    result = []
+    for a in apps:
+        student = Student.query.get(a.student_id)
+        drive = PlacementDrive.query.get(a.drive_id)
+        comp = Company.query.get(drive.company_id) if drive else None
+
+        result.append({
+            "id": a.id,
+            "student_name": student.first_name + " " + student.last_name,
+            "student_id": student.id,
+            "drive_id": a.drive_id,
+            "job_title": drive.job_title,
+            "company_name": comp.company_name,
+            "application_date": str(a.application_date),
+            "status": a.status,
+            "remark": a.remark,
+            "interview_type": a.interview_type
+        })
+    return jsonify(result), 200
+
+
+@app.route('/api/applications', methods=['POST'])
+@auth_required('token')
+def create_application():
+    if not current_user.has_role('student'): return jsonify({"message": "Only students can apply"}), 403
+
+    student = Student.query.filter_by(user_id=current_user.id).first()
+    data = request.get_json() or {}
+    
+    drive = PlacementDrive.query.get(data['drive_id'])
+    if not drive or drive.status != 'Approved': return jsonify({"message": "Invalid drive"}), 400
+
+    new_application = Application(
+        student_id=student.id,
+        drive_id=drive.id,
+        status='Applied'
+    )
+    db.session.add(new_application)
+    db.session.commit()
+    return jsonify({"message": "Application submitted successfully"}), 201
+
+
+
+@app.route('/api/applications/<int:id>', methods=['PUT'])
+@auth_required('token')
+def update_application(id):
+    app_record = Application.query.get(id)
+    if not app_record: return jsonify({"message": "Application not found"}), 404
+
+    data = request.get_json() or {}
+    if 'status' in data and data['status'] != app_record.status:
+        app_record.status = data['status']
+    if 'remark' in data :
+        app_record.remark = data['remark']
+
+    db.session.commit()
+
+    return jsonify({"message": "Application updated successfully"}), 200
