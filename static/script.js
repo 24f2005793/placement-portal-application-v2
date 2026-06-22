@@ -3,13 +3,15 @@ import Home from './components/Home.js';
 import Navbar from './components/Navbar.js';
 import Login from './components/Login.js';
 import Register from './components/Register.js';
+import AdminDashboard from './components/AdminDashboard.js';
 
 
 //Step -2 : Define path for components
 const routes = [
     { path: '/', component: Home },
     { path: '/login',component: Login},
-    { path: '/register',component: Register}
+    { path: '/register',component: Register},
+    { path: '/admin',component: AdminDashboard}
 ];
 
 
