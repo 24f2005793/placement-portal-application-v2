@@ -4,6 +4,8 @@ import Navbar from './components/Navbar.js';
 import Login from './components/Login.js';
 import Register from './components/Register.js';
 import AdminDashboard from './components/AdminDashboard.js';
+import CompanyDashboard from './components/CompanyDashboard.js';
+import CreateDrive from './components/CreateDrive.js';
 
 
 //Step -2 : Define path for components
@@ -11,7 +13,9 @@ const routes = [
     { path: '/', component: Home },
     { path: '/login',component: Login},
     { path: '/register',component: Register},
-    { path: '/admin',component: AdminDashboard}
+    { path: '/admin/dashboard',component: AdminDashboard},
+    { path: '/company/dashboard',component: CompanyDashboard},
+    { path: '/create-drive', component: CreateDrive }
 ];
 
 

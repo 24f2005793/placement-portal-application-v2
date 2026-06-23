@@ -14,7 +14,6 @@ export default {
                             <tr v-if="pendingCompanies.length !== 0">
                                 <th class="col-sr">ID</th>
                                 <th class="col-name">Company Name</th>
-                                <th class="col-job">Website</th>
                                 <th class="col-action pe-5">Actions</th>
                             </tr>
                         </thead>
@@ -23,7 +22,6 @@ export default {
                             <tr v-for="comp in pendingCompanies" :key="'pcomp'+comp.id">
                                 <td class="col-sr">{{ comp.id }}</td>
                                 <td class="col-name">{{ comp.company_name }}</td>
-                                <td class="col-job">{{ comp.website }}</td>
                                 <td class="col-action">
                                     <button @click="openCompanyModal(comp)" class="btn btn-sm btn-secondary me-2"> View</button>
                                     <button @click="updateCompany(comp.id, {approval_status: 'Approved'})" class="btn btn-sm btn-secondary me-2">Approve</button>
@@ -277,7 +275,6 @@ export default {
                         <div class="modal-body">
                             <p><strong>Name:</strong> {{ selectedCompany.company_name }}</p>
                             <p><strong>HR Contact:</strong> {{ selectedCompany.hr_contact || 'N/A' }}</p>
-                            <p><strong>Website:</strong> {{ selectedCompany.website || 'N/A' }}</p>
                             <p><strong>Description:</strong> {{ selectedCompany.description || 'N/A' }}</p>
                         </div>
                         <div class="modal-footer">
