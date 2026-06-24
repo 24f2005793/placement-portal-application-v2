@@ -6,6 +6,10 @@ import Register from './components/Register.js';
 import AdminDashboard from './components/AdminDashboard.js';
 import CompanyDashboard from './components/CompanyDashboard.js';
 import CreateDrive from './components/CreateDrive.js';
+import StudentDashboard from './components/StudentDashboard.js';
+import DriveProfile from './components/DriveProfile.js';
+import StudentProfile from './components/StudentProfile.js'; 
+import CompanyDrives from './components/CompanyDrives.js';
 
 
 //Step -2 : Define path for components
@@ -15,7 +19,11 @@ const routes = [
     { path: '/register',component: Register},
     { path: '/admin/dashboard',component: AdminDashboard},
     { path: '/company/dashboard',component: CompanyDashboard},
-    { path: '/create-drive', component: CreateDrive }
+    { path: '/create-drive', component: CreateDrive },
+    { path: '/student/dashboard', component: StudentDashboard },
+    { path: '/drive/:id', component: DriveProfile },
+    { path: '/student/:id', component: StudentProfile },
+    { path: '/company-drives/:id', component: CompanyDrives }
 ];
 
 
