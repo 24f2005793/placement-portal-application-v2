@@ -6,6 +6,7 @@ from flask_security.utils import logout_user
 
 from application.database import db
 from application.models import *
+from application.cache import cache
 
 
 
@@ -49,6 +50,7 @@ def user_login():
 @auth_required('token', 'session')
 def user_logout():
     logout_user()
+    cache.clear() 
     return jsonify({"message": "Logged out successfully"}), 200
 
 
@@ -124,6 +126,7 @@ def serve_vue_app(path):
 
 
 @app.route('/api/admin/dashboard', methods=['GET'])
+@cache.cached(timeout=60, query_string=True)
 @auth_required('token')
 def get_admin_dashboard():
     if not current_user.has_role('admin'):
@@ -137,6 +140,7 @@ def get_admin_dashboard():
 
 @app.route('/api/companies', methods=['GET'])
 @app.route('/api/companies/<int:id>', methods=['GET'])
+@cache.cached(timeout=60, query_string=True)
 @auth_required('token')
 def get_companies(id=None):
     # Get specific company
@@ -188,6 +192,7 @@ def update_company(id):
             user = User.query.get(company.user_id)
             if user: user.active = data['active']
         db.session.commit()
+        cache.clear()
         return jsonify({"message": "Company status updated by Admin"}), 200
 
     #Company update their own profile
@@ -195,6 +200,7 @@ def update_company(id):
         if 'description' in data: company.description = data['description']
         if 'hr_contact' in data: company.hr_contact = data['hr_contact']
         db.session.commit()
+        cache.clear()
         return jsonify({"message": "Company profile updated successfully"}), 200
 
     return jsonify({"message": "Unauthorized action"}), 403
@@ -203,6 +209,7 @@ def update_company(id):
 @app.route('/api/students', methods=['GET'])
 @app.route('/api/students/<int:id>', methods=['GET'])
 @auth_required('token')
+@cache.cached(timeout=60, query_string=True)
 def get_students(id=None):
     if id:
         student = Student.query.get(id)
@@ -252,6 +259,7 @@ def update_student(id):
             user = User.query.get(student.user_id)
             if user: user.active = data['active']
             db.session.commit()
+            cache.clear()
             return jsonify({"message": "Student status updated by Admin"}), 200
 
     if current_user.has_role('student') and student.user_id == current_user.id:
@@ -260,6 +268,7 @@ def update_student(id):
         if 'branch' in data: student.branch = data['branch']
         if 'cgpa' in data: student.cgpa = data['cgpa']
         db.session.commit()
+        cache.clear()
         return jsonify({"message": "Student profile updated successfully"}), 200
 
     return jsonify({"message": "Unauthorized action"}), 403

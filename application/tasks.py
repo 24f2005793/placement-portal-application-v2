@@ -75,7 +75,7 @@ def send_monthly_admin_report():
     }
 
     message = format_report('templates/admin_monthly_report.html', report_data)
-    admin=User.has_role('admin')
+    admin = User.query.filter_by(email="admin@gmail.com").first()
     emails_sent = 0
 
     send_email(
