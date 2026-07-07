@@ -11,6 +11,7 @@ import DriveProfile from './components/DriveProfile.js';
 import StudentProfile from './components/StudentProfile.js'; 
 import CompanyDrives from './components/CompanyDrives.js';
 import DriveApplications from './components/DriveApplications.js';
+import StudentHistory from './components/StudentHistory.js';
 
 
 //Step -2 : Define path for components
@@ -25,7 +26,8 @@ const routes = [
     { path: '/drive/:id', component: DriveProfile },
     { path: '/student/:id', component: StudentProfile },
     { path: '/company-drives/:id', component: CompanyDrives },
-    { path: '/drive-applications/:id', component: DriveApplications }
+    { path: '/drive-applications/:id', component: DriveApplications },
+    { path: '/student-history', component: StudentHistory }
 ];
 
 

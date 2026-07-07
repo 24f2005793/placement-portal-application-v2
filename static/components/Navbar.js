@@ -95,6 +95,9 @@ export default {
         },
         triggerEditProfile() {
             window.dispatchEvent(new Event('edit-profile'));
+        },
+        triggerReport() {
+            window.dispatchEvent(new Event('student-report'));
         }
     },
     watch: {

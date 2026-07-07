@@ -165,6 +165,26 @@ export default {
                                 </div>
                                 <button type="submit" class="btn btn-secondary w-100 mb-4">Save</button>
                             </form>
+                            <hr>
+                            <h6 class="fw-bold mb-3">Resume Upload</h6>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <input type="file" class="form-control" @change="handleFileUpload" accept="application/pdf">
+                                    <button class="btn btn-secondary" @click="uploadResume" :disabled="!selectedFile">
+                                        Upload
+                                    </button>
+                                </div>
+
+                                <small v-if="profileForm.resume_file" class="text-success mt-1 d-block">
+                                    Current: {{ profileForm.resume_file }}
+                                </small>
+                                <button 
+                                    v-if="profileForm.resume_file" 
+                                    @click="viewResume(profileForm.resume_file)" 
+                                    class="btn btn-sm btn-outline-primary mt-2"
+                                >
+                                    View Resume
+                                </button>
                         </div>
                     </div>
                 </div>
@@ -185,6 +205,7 @@ export default {
             success: null,
             modalError: null,
             modalSuccess: null,
+            selectedFile: null,
             token: localStorage.getItem('auth-token'),
             userId: localStorage.getItem('user_id')
         }
@@ -197,6 +218,7 @@ export default {
     async mounted() {
         if (!this.token) { this.$router.push('/login'); return; }
         window.addEventListener('edit-profile', this.openEditModal);
+        window.addEventListener('student-report', this.requestReport);
         await this.identifyStudent();
         await this.fetchAllData();
     },
@@ -270,6 +292,79 @@ export default {
                 if(res.ok) this.modalSuccess = "Profile updated!";
                 else this.modalError = data.message;
             } catch(e) { this.modalError = "Update failed."; }
+        },
+
+        // Resume upload 
+        handleFileUpload(event) {
+            this.selectedFile = event.target.files[0];
+        },
+
+        async uploadResume() {
+            if(!this.selectedFile) return;
+            this.modalError = null; this.modalSuccess = null;
+            
+            const formData = new FormData();
+            formData.append('file', this.selectedFile);
+
+            try {
+                const res = await fetch('/upload-resume', {
+                    method: 'POST',
+                    headers: { 'Authentication-Token': this.token }, // Do NOT set Content-Type for FormData
+                    body: formData
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    this.modalSuccess = "Resume uploaded securely!";
+                    this.selectedFile = null;
+                } else this.modalError = data.message;
+            } catch(e) { this.modalError = "Upload failed."; }
+        },
+
+        async requestReport() {
+            this.error = null;
+            this.success = null;
+            try {
+                const res = await fetch('/trigger-report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authentication-Token': this.token
+                    }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    this.success = data.message;
+                } else {
+                    this.error = data.message;
+                }
+            } catch (err) {
+                this.error = "Failed to request report. Ensure the server is running.";
+            }
+        },
+        async viewResume(filename) {
+            try {
+                const response = await fetch(`/download-resume/${filename}`, {
+                    method: 'GET',
+                    headers: { 'Authentication-Token': this.token }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const fileUrl = window.URL.createObjectURL(blob);
+                    window.open(fileUrl, '_blank');
+                    setTimeout(() => window.URL.revokeObjectURL(fileUrl), 1000);
+                } else {
+                    this.modalError = "Failed to load resume.";
+                }
+            } catch (err) {
+                this.modalError = "Error opening resume.";
+            }
+        },
+        
+        beforeDestroy() {
+            window.removeEventListener('student-report', this.requestReport);
+            window.removeEventListener('edit-profile', this.openEditModal);
         }
+
     }
 }

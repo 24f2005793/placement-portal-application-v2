@@ -34,6 +34,14 @@ export default {
                         </div>
                         
                         <hr>
+                        <div class="text-center mt-4" v-if="student.resume_file">
+                            <button @click="viewResume(student.resume_file)" class="btn btn-secondary">
+                                View Resume
+                            </button>
+                        </div>
+                        <div class="text-center mt-4 text-muted" v-else>
+                            <p>No resume uploaded yet.</p>
+                        </div>
                     </div>
                     <div class="card-body text-center" v-else>
                         <p>Loading student data...</p>
@@ -60,6 +68,37 @@ export default {
             }
         } catch (err) {
             console.error("Error fetching student profile", err);
+        }
+    },
+
+    methods: {
+        async viewResume(filename) {
+            try {
+                // Securely fetch the PDF with the token attached
+                const response = await fetch(`/download-resume/${filename}`, {
+                    method: 'GET',
+                    headers: { 'Authentication-Token': this.token }
+                });
+
+                if (response.ok) {
+                    // Convert the response to a Blob (raw PDF data)
+                    const blob = await response.blob();
+                    
+                    // Create an invisible local URL for the PDF
+                    const fileUrl = window.URL.createObjectURL(blob);
+                    
+                    // Open the PDF in a new browser tab
+                    window.open(fileUrl, '_blank');
+                    
+                    // Clean up memory after a short delay
+                    setTimeout(() => window.URL.revokeObjectURL(fileUrl), 1000);
+                } else {
+                    alert("Failed to load resume. Ensure you are authorized.");
+                }
+            } catch (err) {
+                console.error("Error fetching resume:", err);
+                alert("A network error occurred.");
+            }
         }
     }
 }

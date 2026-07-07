@@ -7,7 +7,7 @@ from application.models import *
 from application.utils import format_report
 
 
-# SEND DEADLINE REMINDER TO STUDENT'S MAIL ABOUT DRIVES
+# SEND DEADLINE REMINDER TO STUDENT'S MAIL ABOUT DRIVES -(beat)
 @shared_task(ignore_result=True)
 def send_deadline_reminders():
     today = datetime.now().date()
@@ -59,7 +59,7 @@ def send_deadline_reminders():
 
 
 
-# SEND MONTHLY REPORT TO ADMIN 
+# SEND MONTHLY REPORT TO ADMIN -(beat)
 @shared_task(ignore_result=True)
 def send_monthly_admin_report():
     total_drives = PlacementDrive.query.count()
@@ -87,5 +87,43 @@ def send_monthly_admin_report():
     emails_sent += 1
 
     return f"Monthly admin reports sent to {emails_sent} admins."
+
+#EXPORT STUDENT'S APPLICATION HISTORY 
+@shared_task(ignore_result=False)
+def export_student_history_csv(user_id):
+    user = User.query.get(user_id)
+    student = Student.query.filter_by(user_id=user.id).first()
+    
+    if not student:
+        return "Student not found"
+
+    export_folder = 'static/exports'
+    if not os.path.exists(export_folder):
+        os.makedirs(export_folder)
+
+    filename = f'history_{student.id}_{datetime.now().strftime("%f")}.csv'
+    file_path = os.path.join(export_folder, filename)
+
+    applications = Application.query.filter_by(student_id=student.id).all()
+
+    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Student ID', 'Company Name', 'Drive Title', 'Application Status', 'Application Date'])
+        
+        for app in applications:
+            drive = PlacementDrive.query.get(app.drive_id)
+            comp = Company.query.get(drive.company_id) if drive else None
+            
+            app_date = getattr(app, 'application_date', 'N/A')
+            
+            writer.writerow([
+                student.id,
+                comp.company_name if comp else 'N/A',
+                drive.job_title if drive else 'N/A',
+                app.status,
+                str(app_date)
+            ])
+
+    return filename
 
 

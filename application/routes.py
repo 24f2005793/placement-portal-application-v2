@@ -1,12 +1,15 @@
-
-from flask import current_app as app, request, jsonify, render_template
+import os
+from flask import current_app as app, request, jsonify, render_template,send_from_directory
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_security import auth_required, current_user
 from flask_security.utils import logout_user
-
+from datetime import datetime
 from application.database import db
 from application.models import *
 from application.cache import cache
+from application.tasks import *
+from werkzeug.utils import secure_filename
+from celery.result import AsyncResult
 
 
 
@@ -484,3 +487,89 @@ def update_application(id):
     db.session.commit()
 
     return jsonify({"message": "Application updated successfully"}), 200
+
+
+
+@app.route('/upload-resume', methods=['POST'])
+@auth_required('token')
+def upload_resume():
+    if not current_user.has_role('student'):
+        return jsonify({"message": "Only students can upload resumes"}), 403
+
+    if 'file' not in request.files:
+        return jsonify({"message": "No file part in the request"}), 400
+        
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"message": "No file selected for uploading"}), 400
+
+    if file and file.filename.endswith('.pdf'):
+        
+        original_filename = secure_filename(file.filename)
+        safe_filename = f"user_{current_user.id}_{original_filename}"
+        
+        upload_folder = app.config.get('UPLOAD_FOLDER')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+            
+        file_path = os.path.join(upload_folder, safe_filename)
+        file.save(file_path)
+        
+        student = Student.query.filter_by(user_id=current_user.id).first()
+        if student:
+            student.resume_file = safe_filename
+            db.session.commit()
+            
+        return jsonify({
+            "message": "Resume uploaded successfully", 
+            "filename": safe_filename
+        }), 200
+        
+    else:
+        return jsonify({"message": "Allowed file type is PDF only"}), 400
+    
+
+
+@app.route('/download-resume/<filename>', methods=['GET'])
+@auth_required('token')
+def download_resume(filename):
+    upload_folder = app.config.get('UPLOAD_FOLDER')
+    
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder) 
+    try:
+        return send_from_directory(upload_folder, filename)
+    except FileNotFoundError:
+        return jsonify({"message": "Resume file not found"}), 404
+
+
+# CELERY  - Students history 
+@app.route('/api/student/export', methods=['POST'])
+@auth_required('token')
+def trigger_student_export():
+    if not current_user.has_role('student'):
+        return jsonify({"message": "Unauthorized"}), 403
+    task = export_student_history_csv.delay(current_user.id)
+    return jsonify({"message": "Export started", "task_id": task.id}), 202
+
+
+@app.route('/api/student/export/status/<task_id>', methods=['GET'])
+@auth_required('token')
+def student_export_status(task_id):
+    if not current_user.has_role('student'):
+        return jsonify({"message": "Unauthorized"}), 403
+    task = AsyncResult(task_id)
+    if task.state == 'SUCCESS': return jsonify({"status": "Ready", "filename": task.result}), 200
+    elif task.state == 'FAILURE': return jsonify({"status": "Failed"}), 500
+    else: return jsonify({"status": "Processing"}), 202
+
+
+@app.route('/download-student-export/<filename>', methods=['GET']) 
+@auth_required('token')
+def download_student_export(filename):
+    if not current_user.has_role('student'):
+        return jsonify({"message": "Unauthorized"}), 403
+    export_folder = os.path.join(app.root_path, 'static', 'exports')
+    try: return send_from_directory(export_folder, filename, as_attachment=True)
+    except FileNotFoundError: return jsonify({"message": "File not found on server"}), 404
