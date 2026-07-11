@@ -62,6 +62,7 @@ class PlacementDrive(db.Model):
     job_salary = db.Column(db.Integer, nullable=True)       
     job_location = db.Column(db.String(), nullable=True) 
     eligibility_criteria = db.Column(db.String(), nullable=True)
+    eligibility_cgpa = db.Column(db.Float, nullable=True)
     drive_date = db.Column(db.Date, default=datetime.utcnow)
     application_deadline = db.Column(db.Date, nullable=False)
     status = db.Column(db.String(), default='Pending') # pending / approved /rejected

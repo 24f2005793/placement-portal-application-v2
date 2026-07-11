@@ -40,7 +40,12 @@ export default {
                             
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Eligibility Criteria*</label>
-                                <textarea class="form-control" v-model="form.eligibility_criteria" placeholder="branch,cgpa..." rows="4" required></textarea>
+                                <textarea class="form-control" v-model="form.eligibility_criteria" placeholder="branch,skills..." rows="4" required></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Eligibility CGPA</label>
+                                    <input type="number" step="0.1" min="0" max="10" class="form-control" v-model="form.eligibility_cgpa" placeholder="e.g. 7.5">
+                                    <small class="text-muted">Only students with CGPA at or above this value can apply.</small>
                             </div>
                             <button type="submit" class="btn btn-secondary w-100 btn-lg mt-2">Create</button>
                         </form>

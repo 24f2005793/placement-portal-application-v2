@@ -19,6 +19,7 @@ export default {
                         <div class="row mb-2"><div class="col-sm-4 fw-bold">Job Location:</div><div class="col-sm-8">{{ drive.job_location || 'Not specified' }}</div></div>
                         <div class="row mb-2"><div class="col-sm-4 fw-bold">Salary Package:</div><div class="col-sm-8">{{ drive.job_salary ? '₹' + drive.job_salary : 'Not specified' }}</div></div>
                         <div class="row mb-2"><div class="col-sm-4 fw-bold">Deadline:</div><div class="col-sm-8 text-danger fw-bold">{{ drive.application_deadline }}</div></div>
+                        <div class="row mb-2"><div class="col-sm-4 fw-bold">Eligibility CGPA:</div><div class="col-sm-8">{{ drive.eligibility_cgpa != null ? drive.eligibility_cgpa : 'Not specified' }}</div></div>
                         <div class="row mb-2"><div class="col-sm-4 fw-bold">Status:</div><div class="col-sm-8"><span class="badge" :class="drive.status === 'Approved' ? 'bg-success' : 'bg-secondary'">{{ drive.status }}</span></div></div>
                         <hr><h5 class="fw-bold">Eligibility criteria</h5>
                         <p style="white-space: pre-line">{{ drive.eligibility_criteria }}</p>
@@ -29,7 +30,13 @@ export default {
 
                         <div class="text-center mt-4" v-if="userRole === 'student'">
                             <button v-if="hasApplied" class="btn btn-secondary btn-lg px-5" disabled>Applied</button>
-                            <button v-else class="btn btn-success btn-lg px-5" @click="applyForDrive">Apply Now</button>
+                            <template v-else>
+                                <button v-if="isEligible" class="btn btn-success btn-lg px-5" @click="applyForDrive">Apply Now</button>
+                                <div v-else>
+                                    <button class="btn btn-secondary btn-lg px-5" disabled>Not Eligible</button>
+                                    <p class="text-danger mt-2 mb-0">Your CGPA does not meet the eligibility criteria for this drive.</p>
+                                </div>
+                            </template>
                         </div>
                     </div>
                     <div class="card-body text-center" v-else><p>Loading drive data...</p></div>
@@ -42,11 +49,18 @@ export default {
             driveId: this.$route.params.id,
             drive: null,
             hasApplied: false,
+            studentCgpa: null,
             success: null,
             error: null,
             token: localStorage.getItem('auth-token'),
             userRole: localStorage.getItem('role'),
             userId: localStorage.getItem('user_id')
+        }
+    },
+    computed: {
+        isEligible() {
+            if (!this.drive || this.drive.eligibility_cgpa == null) return true;
+            return this.studentCgpa != null && parseFloat(this.studentCgpa) >= parseFloat(this.drive.eligibility_cgpa);
         }
     },
     async mounted() {
@@ -68,6 +82,13 @@ export default {
                 const me = students.find(s => String(s.user_id) === String(this.userId));
                 
                 if (me) {
+                    // Fetch full profile to get CGPA
+                    const detailRes = await fetch(`/api/students/${me.id}`, { headers: { 'Authentication-Token': this.token } });
+                    if (detailRes.ok) {
+                        const detail = await detailRes.json();
+                        this.studentCgpa = detail.cgpa;
+                    }
+
                     // Check if this student has applied for this drive
                     const aRes = await fetch('/api/applications', { headers: { 'Authentication-Token': this.token } });
                     const apps = await aRes.json();

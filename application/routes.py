@@ -294,6 +294,7 @@ def get_drives(id=None):
             "job_salary": drive.job_salary,
             "job_location": drive.job_location,
             "eligibility_criteria": drive.eligibility_criteria,
+            "eligibility_cgpa": drive.eligibility_cgpa,
             "application_deadline": str(drive.application_deadline),
             "status": drive.status
         }), 200
@@ -332,7 +333,8 @@ def get_drives(id=None):
             "status": d.status,
             "application_deadline": str(d.application_deadline),
             "company_name": comp.company_name,
-            "eligibility_criteria": d.eligibility_criteria
+            "eligibility_criteria": d.eligibility_criteria,
+            "eligibility_cgpa": d.eligibility_cgpa
         })
     return jsonify(result), 200
 
@@ -362,6 +364,7 @@ def create_drive():
         job_salary=data.get('job_salary'),
         job_location=data.get('job_location'),
         eligibility_criteria=data.get('eligibility_criteria'),
+        eligibility_cgpa=data.get('eligibility_cgpa'),
         application_deadline=deadline,
         status='Pending',
         search_job_title=make_raw(data['job_title'])
@@ -395,6 +398,8 @@ def update_drive(id):
             if 'job_description' in data: drive.job_description = data['job_description']
             if 'job_salary' in data: drive.job_salary = data['job_salary']
             if 'job_location' in data: drive.job_location = data['job_location']
+            if 'eligibility_criteria' in data: drive.eligibility_criteria = data['eligibility_criteria']
+            if 'eligibility_cgpa' in data: eligibility_cgpa = data['eligibility_cgpa']
             if 'application_deadline' in data: 
                 drive.application_deadline = datetime.strptime(data['application_deadline'], '%Y-%m-%d').date()
             db.session.commit()
@@ -460,6 +465,10 @@ def create_application():
     
     drive = PlacementDrive.query.get(data['drive_id'])
     if not drive or drive.status != 'Approved': return jsonify({"message": "Invalid drive"}), 400
+
+    if drive.eligibility_cgpa is not None:
+        if student.cgpa is None or student.cgpa < drive.eligibility_cgpa:
+            return jsonify({"message": "You do not meet the eligibility CGPA criteria for this drive"}), 403
 
     new_application = Application(
         student_id=student.id,

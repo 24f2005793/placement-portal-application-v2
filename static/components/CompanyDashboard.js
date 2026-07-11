@@ -119,6 +119,16 @@ export default {
                                     <input type="date" class="form-control" v-model="editForm.application_deadline">
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="fw-bold">Eligibility Criteria</label>
+                                    <textarea class="form-control" v-model="editForm.eligibility_criteria" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="fw-bold">Eligibility CGPA</label>
+                                    <input type="number" step="0.1" min="0" max="10" class="form-control" v-model="editForm.eligibility_cgpa" placeholder="e.g. 7.5">
+                                </div>
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" @click="editingDrive = null">Cancel</button>
@@ -200,7 +210,9 @@ export default {
                 job_title: this.editForm.job_title,
                 job_description: this.editForm.job_description,
                 job_location: this.editForm.job_location,
-                application_deadline: this.editForm.application_deadline
+                application_deadline: this.editForm.application_deadline,
+                eligibility_criteria: this.editForm.eligibility_criteria,
+                eligibility_cgpa: this.editForm.eligibility_cgpa
             };
             if (this.editingDrive.status === 'Rejected') {
                 payload.status = 'Pending';

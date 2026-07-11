@@ -68,12 +68,13 @@ export default {
                                 <th class="col-name">Company Name</th>
                                 <th class="col-job">Job Title</th>
                                 <th class="col-date">Deadline</th>
+                                <th class="col-eligibility">Eligibility</th>
                                 <th class="col-action pe-5">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="ongoingDrives.length === 0">
-                                <td colspan="5" class="text-center">No Ongoing Drives.</td>
+                                <td colspan="6" class="text-center">No Ongoing Drives.</td>
                             </tr>
 
                             <tr v-for="(drive, index) in ongoingDrives" :key="'odrive'+drive.id">
@@ -81,13 +82,22 @@ export default {
                                 <td class="col-name">{{ drive.company_name }}</td>
                                 <td class="col-job">{{ drive.job_title }}</td>
                                 <td class="col-date">{{ drive.application_deadline }}</td>
+                                <td class="col-eligibility">
+                                    <span class="badge" :class="isEligible(drive) ? 'bg-success' : 'bg-danger'">
+                                        {{ isEligible(drive) ? 'Eligible' : 'Not Eligible' }}
+                                    </span>
+                                </td>
                                 <td class="col-action pe-5">
                                     <router-link 
+                                        v-if="isEligible(drive)"
                                         :to="'/drive/' + drive.id" 
                                         class="btn btn-sm btn-secondary"
                                     >
                                         Apply
                                     </router-link>
+                                    <button v-else class="btn btn-sm btn-secondary" disabled title="You do not meet the eligibility CGPA">
+                                        Apply
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -199,6 +209,7 @@ export default {
             companies: [],
             applications: [],
             myStudentId: null,
+            studentCgpa: null,
             showEditModal: false,
             profileForm: {},
             error: null,
@@ -231,8 +242,21 @@ export default {
                 const me = allStudents.find(s => String(s.user_id) === String(this.userId));
                 if (me) {
                     this.myStudentId = me.id;
+                    // Fetch full profile to get CGPA for eligibility checks
+                    const detailRes = await fetch(`/api/students/${me.id}`, { headers: { 'Authentication-Token': this.token } });
+                    if (detailRes.ok) {
+                        const detail = await detailRes.json();
+                        this.studentCgpa = detail.cgpa;
+                    }
                 }
             } catch(e) { console.error("Could not identify student"); }
+        },
+
+        // A drive with no eligibility CGPA set is open to everyone.
+        // Otherwise the student's CGPA must be >= the drive's eligibility CGPA.
+        isEligible(drive) {
+            if (drive.eligibility_cgpa == null) return true;
+            return this.studentCgpa != null && parseFloat(this.studentCgpa) >= parseFloat(drive.eligibility_cgpa);
         },
 
         //fetch all approved companies ,applications
@@ -289,7 +313,10 @@ export default {
                     })
                 });
                 const data = await res.json();
-                if(res.ok) this.modalSuccess = "Profile updated!";
+                if(res.ok) {
+                    this.modalSuccess = "Profile updated!";
+                    this.studentCgpa = this.profileForm.cgpa;
+                }
                 else this.modalError = data.message;
             } catch(e) { this.modalError = "Update failed."; }
         },
