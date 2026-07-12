@@ -34,7 +34,7 @@ export default {
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-bold">Application Deadline *</label>
-                                    <input type="date" class="form-control" v-model="form.application_deadline" required>
+                                    <input type="date" class="form-control" v-model="form.application_deadline"  required>
                                 </div>
                             </div>
                             
@@ -47,7 +47,7 @@ export default {
                                     <input type="number" step="0.1" min="0" max="10" class="form-control" v-model="form.eligibility_cgpa" placeholder="e.g. 7.5">
                                     <small class="text-muted">Only students with CGPA at or above this value can apply.</small>
                             </div>
-                            <button type="submit" class="btn btn-secondary w-100 btn-lg mt-2">Create</button>
+                            <button type="submit" class="btn btn-success w-100 btn-lg mt-2">Create</button>
                         </form>
                     </div>
                 </div>
@@ -79,7 +79,7 @@ export default {
                 } else {
                     this.error = data.message;
                 }
-            } catch (err) { this.error = "Failed to create drive."; }
+            } catch (err) { this.error = "Try again: Application deadline must be a future date."; }
         }
     }
 }

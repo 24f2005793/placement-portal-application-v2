@@ -6,6 +6,10 @@ export default {
                 <div v-if="success" class="alert alert-success">{{ success }}</div>
             </div>
 
+            <div class="row g-4">
+            <div class="col-lg-4 order-lg-2">
+            <div class="admin-sidebar">
+
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-dark text-white fw-bold">Pending Company Applications: {{pendingCompanies.length}}</div>
                 <div class="card-body p-0">
@@ -23,9 +27,9 @@ export default {
                                 <td class="col-sr">{{ comp.id }}</td>
                                 <td class="col-name">{{ comp.company_name }}</td>
                                 <td class="col-action">
-                                    <button @click="openCompanyModal(comp)" class="btn btn-sm btn-secondary me-2"> View</button>
-                                    <button @click="updateCompany(comp.id, {approval_status: 'Approved'})" class="btn btn-sm btn-secondary me-2">Approve</button>
-                                    <button @click="updateCompany(comp.id, {approval_status: 'Rejected'})" class="btn btn-sm btn-secondary">Reject</button>
+                                    <button @click="openCompanyModal(comp)" class="btn btn-sm btn-view me-2"> View</button>
+                                    <button @click="updateCompany(comp.id, {approval_status: 'Approved'})" class="btn btn-sm btn-approve me-2">Approve</button>
+                                    <button @click="updateCompany(comp.id, {approval_status: 'Rejected'})" class="btn btn-sm btn-block ">Reject</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -33,34 +37,57 @@ export default {
                 </div>
             </div>
 
-            <div class="card shadow-sm mb-4">
+             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-dark text-white fw-bold">Pending Drive Applications: {{pendingDrives.length}}</div>
                 <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr v-if="pendingDrives.length !== 0">
-                                <th class="col-sr">ID</th>
-                                <th class="col-name">Company Name</th>
-                                <th class="col-job">Job Title</th>
-                                <th class="col-action pe-5">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="pendingDrives.length === 0"><td colspan="3" class="text-center">No pending drives.</td></tr>
-                            <tr v-for="drive in pendingDrives" :key="'pdrive'+drive.id">
-                                <td class="col-sr">{{ drive.id }}</td>
-                                <td class="col-name">{{ drive.company_name }}</td>
-                                <td class="col-job">{{ drive.job_title }}</td>
-                                <td class="col-action">
-                                    <button @click="openDriveModal(drive)" class="btn btn-sm btn-secondary me-2">View</button>
-                                    <button @click="updateDrive(drive.id, {status: 'Approved'})" class="btn btn-sm btn-secondary me-2">Approve</button>
-                                    <button @click="updateDrive(drive.id, {status: 'Rejected'})" class="btn btn-sm btn-secondary">Reject</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div v-if="pendingDrives.length === 0" class="p-3 text-center text-muted">No pending drives.</div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item" v-for="drive in pendingDrives" :key="'pdrive'+drive.id">
+                            <div class="mb-2">
+                                <div class="fw-bold">{{ drive.job_title }}</div>
+                                <div class="text-muted small">{{ drive.company_name }} &middot; ID: {{ drive.id }}</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button @click="openDriveModal(drive)" class="btn btn-sm btn-view flex-fill">View</button>
+                                <button @click="updateDrive(drive.id, {status: 'Approved'})" class="btn btn-sm btn-approve flex-fill">Approve</button>
+                                <button @click="updateDrive(drive.id, {status: 'Rejected'})" class="btn btn-sm btn-block flex-fill">Reject</button>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
             </div>
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white fw-bold">Quick Overview</div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Students
+                            <span class="badge bg-dark rounded-pill">{{ students.length }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Companies
+                            <span class="badge bg-dark rounded-pill">{{ companies.length }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Drives Posted
+                            <span class="badge bg-dark rounded-pill">{{ drives.length }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Applications Received
+                            <span class="badge bg-dark rounded-pill">{{ applications.length }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Students Selected
+                            <span class="badge btn-approve rounded-pill">{{ totalSelected }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            </div>
+            </div>
+
+            <div class="col-lg-8 order-lg-1">
 
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-dark text-white fw-bold d-flex align-items-center gap-3">
@@ -104,10 +131,10 @@ export default {
                                 </td>
                                 <td class="col-action" style="width: 220px">
                                     <button @click="updateStudent(student.id, {active: !student.active})" 
-                                            :class="['btn btn-sm me-2', student.active ? 'btn-secondary' : 'btn-secondary']">
+                                            :class="['btn btn-sm me-2', student.active ? 'btn-block' : 'btn-approve']">
                                         {{ student.active ? 'Block' : 'Unblock' }}
                                     </button>
-                                    <router-link :to="'/student/' + student.id" class="btn btn-sm btn-secondary">View</router-link>
+                                    <router-link :to="'/student/' + student.id" class="btn btn-sm btn-view">View</router-link>
                                 </td>
                             </tr>
                         </tbody>
@@ -156,10 +183,10 @@ export default {
                                 </td>
                                 <td class="col-action" style="width: 220px">
                                     <button @click="updateCompany(comp.id, {active: comp.active === false ? true : false})" 
-                                            :class="['btn btn-sm me-2', comp.active !== false ? 'btn-secondary' : 'btn-secondary']">
+                                            :class="['btn btn-sm me-2', comp.active !== false ? 'btn-block' : 'btn-approve']">
                                         {{ comp.active !== false ? 'Block' : 'Unblock' }}
                                     </button>
-                                    <button @click="openCompanyModal(comp)" class="btn btn-sm btn-secondary">View</button>
+                                    <button @click="openCompanyModal(comp)" class="btn btn-sm btn-view">View</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -206,7 +233,7 @@ export default {
                                 <td class="col-date">{{ drive.application_deadline }}</td>
                                 <td class="col-action">
                                     <button @click="updateDrive(drive.id, {status: 'Closed'})" class="btn btn-sm btn-secondary me-2">Close</button>
-                                    <router-link :to="'/drive/' + drive.id" class="btn btn-sm btn-secondary">View</router-link>
+                                    <router-link :to="'/drive/' + drive.id" class="btn btn-sm btn-view">View</router-link>
                                 </td>
                             </tr>
                         </tbody>
@@ -235,12 +262,15 @@ export default {
                                 <td class="col-job">{{ app.job_title }}</td>
                                 <td class="col-date">{{ app.application_date }}</td>
                                 <td class="col-action pe-5">
-                                    <router-link :to="'/student/' + (app.student_id || '')" class="btn btn-sm btn-secondary">View</router-link>
+                                    <router-link :to="'/student/' + (app.student_id || '')" class="btn btn-sm btn-view">View</router-link>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            </div>
             </div>
 
             <div class="modal d-block" style="background: rgba(0,0,0,0.5);" v-if="selectedDrive" tabindex="-1">
@@ -307,7 +337,8 @@ export default {
         pendingCompanies() { return this.companies.filter(c => c.approval_status === 'Pending'); },
         approvedCompanies() { return this.companies.filter(c => c.approval_status === 'Approved'); },
         pendingDrives() { return this.drives.filter(d => d.status === 'Pending'); },
-        ongoingDrives() { return this.drives.filter(d => d.status === 'Approved'); }
+        ongoingDrives() { return this.drives.filter(d => d.status === 'Approved'); },
+        totalSelected() { return this.applications.filter(a => a.status === 'Selected').length; }
     },
     async mounted() {
         if (!this.token) { this.$router.push('/login'); return; }

@@ -44,7 +44,7 @@ export default {
                                     <button v-if="drive.status === 'Pending'" @click="openEditModal(drive)" class="btn btn-sm btn-secondary">Edit Drive</button>
                                     
                                     <template v-if="drive.status === 'Approved'">
-                                        <router-link :to="'/drive-applications/' + drive.id" class="btn btn-sm btn-secondary">View</router-link>
+                                        <router-link :to="'/drive-applications/' + drive.id" class="btn btn-sm btn-view">View</router-link>
                                         <button @click="updateDriveStatus(drive.id, 'Closed')" class="btn btn-sm btn-secondary">Complete</button>
                                     </template>
                                     
@@ -52,7 +52,7 @@ export default {
                                     <button 
                                         v-if="drive.status === 'Pending'"
                                         @click="deleteDrive(drive.id)" 
-                                        class="btn btn-sm btn-secondary ms-2">
+                                        class="btn btn-sm btn-block ms-2">
                                         Delete
                                     </button>
                                 </td>
@@ -77,7 +77,7 @@ export default {
                                 <td>
                                     <router-link 
                                         :to="'/drive-applications/' + drive.id" 
-                                        class="btn btn-sm btn-secondary me-2">
+                                        class="btn btn-sm btn-view me-2">
                                         View
                                     </router-link>
 
@@ -271,7 +271,7 @@ export default {
                     this.success = data.message || "Update successful";
                     await this.fetchDrives();
                 } else this.error = data.message;
-            } catch (err) { this.error = "Action failed."; }
+            } catch (err) { this.error = "Try again: Application deadline must be a future date."; }
         }
     }
 }

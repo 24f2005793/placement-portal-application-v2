@@ -356,6 +356,8 @@ def create_drive():
     if not data.get('application_deadline'): return jsonify({"message": "Deadline is required (YYYY-MM-DD)"}), 400
 
     deadline = datetime.strptime(data['application_deadline'], '%Y-%m-%d').date()
+    if deadline <= datetime.now().date():
+        return jsonify({"message": "Application deadline must be a future date"}), 400
 
     new_drive = PlacementDrive(
         company_id=company.id,
@@ -402,6 +404,8 @@ def update_drive(id):
             if 'eligibility_cgpa' in data: eligibility_cgpa = data['eligibility_cgpa']
             if 'application_deadline' in data: 
                 drive.application_deadline = datetime.strptime(data['application_deadline'], '%Y-%m-%d').date()
+                if new_deadline <= datetime.now().date():
+                    return jsonify({"message": "Application deadline must be a future date"}), 400
             db.session.commit()
             return jsonify({"message": "Drive details updated"}), 200
 

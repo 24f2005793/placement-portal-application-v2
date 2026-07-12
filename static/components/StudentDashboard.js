@@ -30,7 +30,7 @@ export default {
                                 <td class="col-sr">{{ index + 1 }}</td>
                                 <td class="col-name">{{ comp.company_name }}</td>
                                 <td class="col-action pe-4">
-                                    <router-link :to="'/company-drives/' + comp.id" class="btn btn-sm btn-secondary">View Drives</router-link>
+                                    <router-link :to="'/company-drives/' + comp.id" class="btn btn-sm btn-success">View Drives</router-link>
                                 </td>
                             </tr>
                         </tbody>
@@ -91,7 +91,7 @@ export default {
                                     <router-link 
                                         v-if="isEligible(drive)"
                                         :to="'/drive/' + drive.id" 
-                                        class="btn btn-sm btn-secondary"
+                                        class="btn btn-sm btn-primary"
                                     >
                                         Apply
                                     </router-link>

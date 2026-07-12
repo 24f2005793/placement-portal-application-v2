@@ -1,8 +1,9 @@
 export default {
     template: `
-        <div class="row justify-content-center mt-5">
+        <div class="auth-shell mt-4">
+        <div class="row justify-content-center">
             <div class="col-md-5">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm auth-card">
                     <div class="card-body p-4">
                         <h3 class="card-title text-center mb-4">Login</h3>
                         
@@ -19,7 +20,7 @@ export default {
                                 <label class="form-label">Password</label>
                                 <input type="password" class="form-control" v-model="password" required>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                            <button type="submit" class="btn btn-success w-100">Login</button>
                         </form>
                         
                         <div class="mt-3 text-center">
@@ -28,6 +29,7 @@ export default {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     `,
     
