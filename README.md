@@ -10,7 +10,7 @@ The application is built using **Flask** for the backend, **Vue.js** for the fro
 
 ## Features
 
-### Admin
+### Admin 👩‍💻
 - Pre-created Admin login
 - Approve or reject company registrations
 - Approve or reject placement drives
@@ -18,14 +18,14 @@ The application is built using **Flask** for the backend, **Vue.js** for the fro
 - Blacklist companies or students
 - Search companies, students, and placement drives
 
-### Company
+### Company 🏢
 - Register and login after Admin approval
 - Create and manage placement drives
 - View applicants for each placement drive
 - Shortlist candidates
 - Update application status
 
-### Student
+### Student 🧑‍🎓
 - Register and login
 - Update profile and upload resume
 - View approved placement drives
@@ -36,7 +36,7 @@ The application is built using **Flask** for the backend, **Vue.js** for the fro
 
 ---
 
-## Additional Features
+## Additional Features 📌
 
 - Role-Based Access Control (RBAC) using JWT
 - RESTful API architecture
@@ -48,7 +48,7 @@ The application is built using **Flask** for the backend, **Vue.js** for the fro
 
 ---
 
-## Tech Stack
+## Tech Stack ⚙️
 
 | Category | Technology |
 |----------|------------|
